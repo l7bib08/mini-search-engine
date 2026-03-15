@@ -7,14 +7,13 @@ allowed_domain = "quotes.toscrape.com"
 
 url_queue = [(seed_url, 0)]
 visited_urls = set()
-pages_data = []
+pages_data = {}
 
 pages_crawled = 0
 max_pages = 20
 max_depth = 3
 
 while len(url_queue) != 0 and pages_crawled < max_pages:
-
     current_url, current_depth = url_queue.pop(0)
 
     if current_url in visited_urls:
@@ -31,10 +30,12 @@ while len(url_queue) != 0 and pages_crawled < max_pages:
 
         page = BeautifulSoup(response.text, "html.parser")
         links_page = page.find_all("a")
+
         text_page = page.get_text()
         text_page = text_page.replace("\n", " ")
         text_page = text_page.replace("\t", " ")
         text_page = " ".join(text_page.split())
+
         title_page_text = page.title.string if page.title else "No title"
 
         page_record = {
@@ -44,7 +45,7 @@ while len(url_queue) != 0 and pages_crawled < max_pages:
             "text": text_page
         }
 
-        pages_data.append(page_record)
+        pages_data[current_url] = page_record
 
         valid_links_count = 0
 
@@ -81,3 +82,6 @@ while len(url_queue) != 0 and pages_crawled < max_pages:
         print("Page failed with status code:", response.status_code)
 
 print("Total stored pages:", len(pages_data))
+
+for url, page in pages_data.items():
+    print(url, "->", page["title"])
