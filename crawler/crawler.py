@@ -5,83 +5,67 @@ from bs4 import BeautifulSoup
 seed_url = "https://quotes.toscrape.com/"
 allowed_domain = "quotes.toscrape.com"
 
-url_queue = [(seed_url, 0)]
-visited_urls = set()
 pages_data = {}
 
-pages_crawled = 0
-max_pages = 20
-max_depth = 3
+def crawl():
+    url_queue = [(seed_url, 0)]
+    visited_urls = set()
 
-while len(url_queue) != 0 and pages_crawled < max_pages:
-    current_url, current_depth = url_queue.pop(0)
+    pages_crawled = 0
+    max_pages = 20
+    max_depth = 3
 
-    if current_url in visited_urls:
-        continue
+    while len(url_queue) != 0 and pages_crawled < max_pages:
+        current_url, current_depth = url_queue.pop(0)
 
-    print("Visiting:", current_url, "| Depth:", current_depth)
-    visited_urls.add(current_url)
-    pages_crawled += 1
+        if current_url in visited_urls:
+            continue
 
-    response = requests.get(current_url)
+        print("Visiting:", current_url, "| Depth:", current_depth)
+        visited_urls.add(current_url)
+        pages_crawled += 1
 
-    if response.status_code == 200:
-        print("Page loaded successfully")
+        response = requests.get(current_url)
 
-        page = BeautifulSoup(response.text, "html.parser")
-        links_page = page.find_all("a")
+        if response.status_code == 200:
+            print("Page loaded successfully")
 
-        text_page = page.get_text()
-        text_page = text_page.replace("\n", " ")
-        text_page = text_page.replace("\t", " ")
-        text_page = " ".join(text_page.split())
+            page = BeautifulSoup(response.text, "html.parser")
+            links_page = page.find_all("a")
+            text_page = page.get_text()
+            text_page = text_page.replace("\n", " ")
+            text_page = text_page.replace("\t", " ")
+            text_page = " ".join(text_page.split())
+            title_page_text = page.title.string if page.title else "No title"
 
-        title_page_text = page.title.string if page.title else "No title"
+            page_record = {
+                "url": current_url,
+                "depth": current_depth,
+                "title": title_page_text,
+                "text": text_page
+            }
 
-        page_record = {
-            "url": current_url,
-            "depth": current_depth,
-            "title": title_page_text,
-            "text": text_page
-        }
+            pages_data[current_url] = page_record
 
-        pages_data[current_url] = page_record
+            for link in links_page:
+                href = link.get("href")
 
-        valid_links_count = 0
+                if href is None:
+                    continue
 
-        print("-------------------------------------")
-        print("URL:", current_url)
-        print("Depth:", current_depth)
-        print("Title:", title_page_text)
-        print("Text length:", len(text_page))
+                full_url = urljoin(current_url, href)
+                new_depth = current_depth + 1
 
-        for link in links_page:
-            href = link.get("href")
+                if (
+                    allowed_domain in full_url
+                    and full_url not in visited_urls
+                    and (full_url, new_depth) not in url_queue
+                    and new_depth <= max_depth
+                ):
+                    url_queue.append((full_url, new_depth))
 
-            if href is None:
-                continue
+    print("Total stored pages:", len(pages_data))
 
-            full_url = urljoin(current_url, href)
-            new_depth = current_depth + 1
-            valid_links_count += 1
 
-            if (
-                allowed_domain in full_url
-                and full_url not in visited_urls
-                and (full_url, new_depth) not in url_queue
-                and new_depth <= max_depth
-            ):
-                url_queue.append((full_url, new_depth))
-
-            print("Full link:", full_url, "| New depth:", new_depth)
-
-        print("Links found:", valid_links_count)
-        print("-------------------------------------")
-
-    else:
-        print("Page failed with status code:", response.status_code)
-
-print("Total stored pages:", len(pages_data))
-
-for url, page in pages_data.items():
-    print(url, "->", page["title"])
+if __name__ == "__main__":
+    crawl()
