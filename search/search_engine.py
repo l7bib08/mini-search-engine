@@ -1,0 +1,1 @@
+from indexer.inverted_index import inverted_index
