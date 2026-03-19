@@ -36,13 +36,15 @@ def crawl():
             text_page = text_page.replace("\n", " ")
             text_page = text_page.replace("\t", " ")
             text_page = " ".join(text_page.split())
+            snippet = "".join(text_page[:120])
             title_page_text = page.title.string if page.title else "No title"
 
             page_record = {
                 "url": current_url,
                 "depth": current_depth,
                 "title": title_page_text,
-                "text": text_page
+                "text": text_page,
+                "snippet": snippet
             }
 
             pages_data[current_url] = page_record
@@ -54,6 +56,8 @@ def crawl():
                     continue
 
                 full_url = urljoin(current_url, href)
+                if "/tag/" in full_url or "/author/" in full_url:
+                    continue
                 new_depth = current_depth + 1
 
                 if (

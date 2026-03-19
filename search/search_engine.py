@@ -30,7 +30,8 @@ def search(query):
         result = {
             "title": pages_data[url]["title"],
             "url": url,
-            "score": score
+            "score": score,
+            "snippet": pages_data[url]["snippet"]
         }
         results.append(result)
 
@@ -49,4 +50,5 @@ if __name__ == "__main__":
             print("Title :", result["title"])
             print("URL   :", result["url"])
             print("Score :", result["score"])
+            print("snippet :", result["snippet"], "...")
         print("-------------------------------------")
