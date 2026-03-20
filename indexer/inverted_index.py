@@ -15,7 +15,4 @@ for url, page in pages_data.items():
 
         inverted_index[word].append(url)
 
-print("Number of indexed words:", len(inverted_index))
-
-for word, urls in list(inverted_index.items())[:10]:
-    print(word, "->", urls)
+print("Indexed words:", len(inverted_index))

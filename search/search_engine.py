@@ -2,53 +2,43 @@ from indexer.inverted_index import inverted_index
 from crawler.crawler import pages_data
 import string
 
-
 def search(query):
-    search_engine_docs_words_mentions = {}
+    scores = {}
+    matched_words = {}
 
-    clean_query = query.lower()
-    clean_query = clean_query.translate(str.maketrans('', '', string.punctuation))
-    query_words = clean_query.split()
+    query = query.lower()
+    query = query.translate(str.maketrans('', '', string.punctuation))
+    words = query.split()
 
-    for word in query_words:
+    for word in words:
         if word in inverted_index:
             for url in inverted_index[word]:
-                if url not in search_engine_docs_words_mentions:
-                    search_engine_docs_words_mentions[url] = 0
+                if url not in scores:
+                    scores[url] = 0
+                    matched_words[url] = set()
 
-                search_engine_docs_words_mentions[url] += 1
+                scores[url] += 1
+                matched_words[url].add(word)
 
-    sorted_results = sorted(
-        search_engine_docs_words_mentions.items(),
-        key = lambda item: item[1],
-        reverse = True
-    )
-    
+                # bonus titre
+                title = pages_data[url]["title"].lower()
+                if word in title:
+                    scores[url] += 2
+
+    # bonus multi mots
+    for url in scores:
+        if len(matched_words[url]) >= 2:
+            scores[url] += len(matched_words[url])
+
+    sorted_results = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
     results = []
-
     for url, score in sorted_results:
-        result = {
+        results.append({
             "title": pages_data[url]["title"],
             "url": url,
             "score": score,
             "snippet": pages_data[url]["snippet"]
-        }
-        results.append(result)
+        })
 
     return results
-
-
-if __name__ == "__main__":
-    user_query = input("Qu'est ce que vous cherchez ... ")
-    results = search(user_query)
-
-    if len(results) == 0:
-        print("No results found.")
-    else:
-        for result in results:
-            print("-------------------------------------")
-            print("Title :", result["title"])
-            print("URL   :", result["url"])
-            print("Score :", result["score"])
-            print("snippet :", result["snippet"], "...")
-        print("-------------------------------------")
